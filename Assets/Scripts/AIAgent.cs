@@ -4,5 +4,5 @@ using UnityEngine;
 
 public abstract class AIAgent : MonoBehaviour
 {
-    public AIMovement movement = null;
+    public AIMovement movement;
 }
