@@ -38,7 +38,7 @@ public class AIAutonomousAgent : AIAgent
             if (gameObjects.Length > 0)
             {
                 movement.ApplyForce(Cohesion(gameObjects));
-                movement.ApplyForce(Seperation(gameObjects, 3));
+                movement.ApplyForce(Separation(gameObjects, 5));
                 movement.ApplyForce(Alignment(gameObjects));
             }
         }
@@ -72,19 +72,24 @@ public class AIAutonomousAgent : AIAgent
         return GetSteringForce(direction);
     }
 
-    private Vector3 Seperation(GameObject[] neighbors, float radius)
+    private Vector3 Separation(GameObject[] neighbors, float radius)
     {
-        Vector3 seperation = Vector3.zero;
+        Vector3 separation = Vector3.zero;
         foreach (var neighbor in neighbors)
         {
-            Vector3 direction = transform.position - neighbor.transform.position;
+            // get direction vector away from neighbor
+            Vector3 direction = (transform.position - neighbor.transform.position);
+            // check if within separation radius
             if (direction.magnitude < radius)
             {
-                seperation += direction / direction.sqrMagnitude;
+                // scale separation vector inversely proportional to the direction distance
+                // closer the distance the stronger the separation
+                separation += direction / direction.sqrMagnitude;
             }
         }
 
-        Vector3 force = GetSteringForce(seperation);
+        Vector3 force = GetSteringForce(separation);
+
         return force;
     }
 
