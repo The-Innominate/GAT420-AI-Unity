@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -11,23 +12,54 @@ public class AIRaycastPerception : AIPerception
     {
         List<GameObject> result = new List<GameObject>();
 
-        Collider[] colliders = Physics.OverlapSphere(transform.position, distance);
-        foreach (Collider collider in colliders)
+        Vector3[] directions = Utilities.GetDirectionsInCircle(numRaycast, maxAngle);
+        foreach (Vector3 direction in directions)
         {
-            if (collider.gameObject == gameObject) continue;
-            if (tagName == "" || collider.CompareTag(tagName))
+            Ray ray = new Ray(transform.position, transform.rotation * direction);
+            Debug.DrawRay(ray.origin, ray.direction * distance, Color.blue);
+            if(Physics.Raycast(ray, out RaycastHit raycastHit, distance))
             {
-                // calculate angle from transform forward vector to direction of game object
-                Vector3 direction = (collider.transform.position - transform.position).normalized;
-                float angle = Vector3.Angle(transform.forward, direction);
-                // if angle is less than max angle, add game object
-                if (angle <= maxAngle)
+                Debug.DrawRay(ray.origin, ray.direction * raycastHit.distance, Color.red);
+                if (raycastHit.collider.gameObject == gameObject) continue;
+                if (tagName == "" || raycastHit.collider.CompareTag(tagName))
                 {
-                    result.Add(collider.gameObject);
+                    result.Add(raycastHit.collider.gameObject);
                 }
             }
         }
 
+        result = result.Distinct().ToList();
+
         return result.ToArray();
+    }
+
+    public bool GetOpenDirection(ref Vector3 openDirection)
+    {
+        Vector3[] directions = Utilities.GetDirectionsInCircle(numRaycast, maxAngle);
+        foreach (var direction in directions)
+        {
+            // cast ray from transform position towards direction (use game object orientation)
+            Ray ray = new Ray(transform.position, transform.rotation * direction);
+            // if there is NO raycast hit then that is an open direction
+            if (!Physics.Raycast(ray, out RaycastHit raycastHit, distance, layerMask))
+            {
+                Debug.DrawRay(ray.origin, ray.direction * distance, Color.green);
+                // set open direction
+                openDirection = ray.direction;
+                return true;
+            }
+        }
+
+        // no open direction
+        return false;
+    }
+
+    public bool CheckDirection(Vector3 direction)
+    {
+        // create ray in direction (use game object orientation)
+        Ray ray = new Ray(transform.position, transform.rotation * direction);
+        // check ray cast
+        return Physics.Raycast(ray, distance, layerMask);
+
     }
 }
